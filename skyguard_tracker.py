@@ -27,6 +27,7 @@ LOCK_HOLD_FRAMES = 60       # frames to keep predicting after target lost (~2s a
 HOLD_TIMEOUT_FRAMES = 240   # frames to hold last position before giving up and sweeping again
 WARMUP_FRAMES = 30          # frames to skip so background subtractor can initialise
 
+
 SERIAL_PORT = 'COM5'
 SERIAL_BAUD = 115200
 SERIAL_RETRIES = 3
