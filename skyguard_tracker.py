@@ -7,7 +7,7 @@ import atexit
 import traceback
 
 # === CONFIGURATION ===
-URL = "http://balblabla:8080/video"
+CAMERA_SOURCE = 0
 CAM_WIDTH, CAM_HEIGHT = 320, 240
 MIN_CONTOUR_AREA = 800
 SMOOTHING_ALPHA = 0.3
@@ -121,15 +121,18 @@ def send_command_to_esp32(pan, tilt, force=False):
 
 
 # === CAMERA ===
-def open_capture(url):
-    cap = cv2.VideoCapture(url)
-    cap.set(cv2.CAP_PROP_BUFFERSIZE, 2)
+def open_capture(source):
+    cap = cv2.VideoCapture(source)
+    cap.set(cv2.CAP_PROP_BUFFERSIZE, 1)  # Keep buffer at 1 frame to avoid reading stale frames (reduces latency)
+    if isinstance(source, int):
+        cap.set(cv2.CAP_PROP_FRAME_WIDTH, CAM_WIDTH)
+        cap.set(cv2.CAP_PROP_FRAME_HEIGHT, CAM_HEIGHT)
     return cap if cap.isOpened() else None
 
 
-def try_open_with_retries(url, retries=3, delay=RECONNECT_DELAY):
+def try_open_with_retries(source, retries=3, delay=RECONNECT_DELAY):
     for _ in range(retries):
-        cap = open_capture(url)
+        cap = open_capture(source)
         if cap:
             print("Camera online.")
             return cap
@@ -301,7 +304,7 @@ def cleanup():
 atexit.register(cleanup)
 
 # === STARTUP ===
-cap = try_open_with_retries(URL, retries=3)
+cap = try_open_with_retries(CAMERA_SOURCE, retries=3)
 if cap is None:
     print("Camera not found. Aborting.")
     sys.exit(1)
@@ -327,7 +330,7 @@ try:
         if not ret:
             cap.release()
             print("Reconnecting camera...")
-            cap = try_open_with_retries(URL, retries=3)
+            cap = try_open_with_retries(CAMERA_SOURCE, retries=1)
             if cap is None:
                 print("Camera lost. Exiting.")
                 break
